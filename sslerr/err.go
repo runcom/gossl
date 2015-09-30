@@ -2,9 +2,9 @@ package sslerr
 
 /*
 #cgo pkg-config: openssl
-#include "openssl/ssl.h"
-#include "openssl/conf.h"
-#include "openssl/err.h"
+#include <openssl/ssl.h>
+#include <openssl/conf.hr
+#include <openssl/err.h>
 */
 import "C"
 import (
@@ -19,6 +19,7 @@ func init() {
 }
 
 // OpenSSL cleanup and freeing
+// TODO(runcom): is this really needed?
 func Cleanup() {
 	C.ERR_free_strings()
 }
@@ -34,6 +35,8 @@ func (err SSLError) String() string {
 	return fmt.Sprintf("%s", err.msg)
 }
 
+// TODO(runcom): rename to just SSLError() or GetSSLError() and
+// rework this interface....
 func SSLErrorMessage() SSLError {
 	msg := ""
 	for {
@@ -45,6 +48,17 @@ func SSLErrorMessage() SSLError {
 	}
 	C.ERR_clear_error()
 	return SSLError{msg: msg}
+}
+
+func Error() error {
+	return formatError(SSLErrorMessage().String())
+}
+
+func formatError(msg string) error {
+	if len(msg) == 0 {
+		return nil
+	}
+	return fmt.Errorf("%s", msg)
 }
 
 func getErrorString(code C.ulong) string {
@@ -73,15 +87,4 @@ func getErrorString(code C.ulong) string {
 		}
 	}
 	return msg
-}
-
-func Error() error {
-	return formatError(SSLErrorMessage().String())
-}
-
-func formatError(msg string) error {
-	if len(msg) == 0 {
-		return nil
-	}
-	return fmt.Errorf("%s", msg)
 }
